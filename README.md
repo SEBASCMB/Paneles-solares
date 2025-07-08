@@ -8,22 +8,25 @@
 
 ## 📋 Descripción del Proyecto
 
-PanelSolar es un sistema integral para la gestión de instalaciones de paneles solares. La aplicación permite administrar usuarios, regiones, catálogos de paneles solares y el seguimiento detallado de instalaciones, considerando aspectos técnicos como la radiación solar, inclinación óptima y otras características ambientales.
+PanelSolar es un sistema integral para la gestión de instalaciones de paneles solares. La aplicación permite administrar usuarios, regiones, catálogos de paneles solares y el seguimiento detallado de instalaciones, considerando aspectos técnicos como la radiación solar, inclinación óptima y otras características ambientales que afectan el rendimiento de los sistemas fotovoltaicos.
 
 ## ✨ Características Principales
 
-- 👤 **Gestión de Usuarios**: Registro, actualización y administración de información de clientes
-- 🗺️ **Administración de Regiones**: Organización por zonas geográficas
-- 🔋 **Catálogo de Paneles Solares**: Gestión de diferentes modelos con sus especificaciones técnicas
-- 📊 **Caracterización de Sitios**: Registro de parámetros ambientales como radiación solar, inclinación óptima y sombras
-- 🔧 **Control de Instalaciones**: Seguimiento completo del proceso de instalación de paneles solares
+- 👤 **Gestión de Usuarios**: Registro, autenticación, actualización y administración de información de clientes
+- 🗺️ **Administración de Regiones**: Organización geográfica de instalaciones y usuarios por zonas
+- 🔋 **Catálogo de Paneles Solares**: Gestión completa de modelos con especificaciones técnicas (potencia, eficiencia, dimensiones)
+- 📊 **Caracterización de Sitios**: Registro detallado de parámetros ambientales como radiación solar, inclinación óptima, orientación, sombras y temperatura
+- 🔧 **Control de Instalaciones**: Seguimiento completo del ciclo de vida de instalaciones con cálculo automático de potencia y costos
+- 📈 **Análisis de Datos**: Capacidad para filtrar y visualizar instalaciones por regiones y usuarios
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **Java 21**: Lenguaje de programación principal
-- **MySQL**: Sistema gestor de base de datos
+- **Java 21**: Lenguaje de programación principal con soporte para las últimas características
+- **MySQL 9.3.0**: Sistema gestor de base de datos relacional
 - **Maven**: Gestión de dependencias y construcción del proyecto
-- **JDBC**: Conectividad con la base de datos
+- **JDBC**: Conectividad y operaciones con la base de datos
+- **Patrón MVC**: Arquitectura Modelo-Vista-Controlador para una estructura organizada del código
+- **Patrón DAO**: Data Access Object para separar la lógica de acceso a datos
 
 ## 🚀 Instalación y Configuración
 
@@ -37,7 +40,7 @@ PanelSolar es un sistema integral para la gestión de instalaciones de paneles s
 
 1. **Clonar el repositorio**
    ```bash
-   git clone https://github.com/tuusuario/PanelSolar.git
+   git clone https://github.com/SEBASCMB/PanelSolar.git
    cd PanelSolar
    ```
 
@@ -47,34 +50,98 @@ PanelSolar es un sistema integral para la gestión de instalaciones de paneles s
    ```
 
 3. **Configurar la base de datos**
-
+   
    Crear una base de datos MySQL llamada `panelsolar`:
    ```sql
    CREATE DATABASE panelsolar;
    ```
 
-   Crear un usuario para la base de datos:
+   Crear un usuario para la base de datos (o usar uno existente):
    ```sql
    CREATE USER 'usuario'@'localhost' IDENTIFIED BY 'password';
    GRANT ALL PRIVILEGES ON panelsolar.* TO 'usuario'@'localhost';
    FLUSH PRIVILEGES;
    ```
 
-   Ejecutar el script de creación de tablas (disponible en `/scripts/database.sql`).
+   Crear las tablas necesarias:
+   ```sql
+   CREATE TABLE regiones (
+       id INT AUTO_INCREMENT PRIMARY KEY,
+       nombre VARCHAR(100) NOT NULL
+   );
+
+   CREATE TABLE usuarios (
+       id INT AUTO_INCREMENT PRIMARY KEY,
+       nombre VARCHAR(100) NOT NULL,
+       apellido VARCHAR(100) NOT NULL,
+       email VARCHAR(100) NOT NULL UNIQUE,
+       password VARCHAR(255) NOT NULL,
+       telefono VARCHAR(20),
+       direccion VARCHAR(255),
+       region_id INT,
+       FOREIGN KEY (region_id) REFERENCES regiones(id)
+   );
+
+   CREATE TABLE paneles_solares (
+       id INT AUTO_INCREMENT PRIMARY KEY,
+       modelo VARCHAR(100) NOT NULL,
+       potencia DOUBLE NOT NULL,
+       dimensiones VARCHAR(100),
+       eficiencia DOUBLE,
+       precio DOUBLE,
+       tipo VARCHAR(50),
+       garantia INT
+   );
+
+   CREATE TABLE caracterizaciones (
+       id INT AUTO_INCREMENT PRIMARY KEY,
+       radiacion_solar DOUBLE NOT NULL,
+       inclinacion_optima DOUBLE NOT NULL,
+       orientacion VARCHAR(50) NOT NULL,
+       porcentaje_sombra DOUBLE,
+       temperatura_media DOUBLE,
+       altitud DOUBLE,
+       observaciones TEXT
+   );
+
+   CREATE TABLE instalaciones_panel_solar (
+       id INT AUTO_INCREMENT PRIMARY KEY,
+       usuario_id INT NOT NULL,
+       panel_solar_id INT NOT NULL,
+       caracterizacion_id INT NOT NULL,
+       region_id INT NOT NULL,
+       fecha_instalacion DATE,
+       direccion_instalacion VARCHAR(255),
+       cantidad_paneles INT NOT NULL,
+       potencia_total DOUBLE,
+       estado VARCHAR(50),
+       costo_total DOUBLE,
+       observaciones TEXT,
+       FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+       FOREIGN KEY (panel_solar_id) REFERENCES paneles_solares(id),
+       FOREIGN KEY (caracterizacion_id) REFERENCES caracterizaciones(id),
+       FOREIGN KEY (region_id) REFERENCES regiones(id)
+   );
+   ```
 
 4. **Configurar la conexión a la base de datos**
-
-   Editar el archivo `src/main/java/org/example/util/DatabaseUtil.java` con los valores de conexión correctos.
+   
+   Editar el archivo `src/main/java/org/example/util/DatabaseUtil.java` con los valores de conexión correctos:
+   ```java
+   private static final String URL = "jdbc:mysql://localhost:3306/panelsolar";
+   private static final String USER = "tu_usuario";
+   private static final String PASSWORD = "tu_contraseña";
+   ```
 
 ## 📊 Estructura de la Base de Datos
 
 El sistema utiliza las siguientes tablas principales:
 
-- **usuarios**: Almacena la información de los clientes
-- **regiones**: Catalogo de regiones geográficas
-- **paneles_solares**: Catálogo de modelos disponibles
-- **caracterizaciones**: Datos técnicos de los sitios de instalación
-- **instalaciones_paneles_solares**: Registro de instalaciones realizadas
+- **usuarios**: Almacena información de clientes (nombre, apellido, email, contraseña, etc.)
+- **regiones**: Catálogo de regiones geográficas
+- **paneles_solares**: Catálogo de modelos disponibles con sus especificaciones técnicas
+- **caracterizaciones**: Almacena datos técnicos de los sitios de instalación (radiación solar, inclinación, etc.)
+- **instalaciones_panel_solar**: Registro completo de instalaciones realizadas
 
 ## 📁 Estructura del Proyecto
 
@@ -85,10 +152,24 @@ PanelSolar/
 │   │   ├── java/
 │   │   │   └── org/
 │   │   │       └── example/
-│   │   │           ├── controller/     # Controladores
-│   │   │           ├── dao/            # Acceso a datos
+│   │   │           ├── controller/     # Controladores de lógica de negocio
+│   │   │           │   ├── InstalacionPanelSolarController.java
+│   │   │           │   ├── RegionController.java
+│   │   │           │   └── UsuarioController.java
+│   │   │           ├── dao/            # Objetos de acceso a datos
+│   │   │           │   ├── CaracterizacionDAO.java
+│   │   │           │   ├── InstalacionPanelSolarDAO.java
+│   │   │           │   ├── PanelSolarDAO.java
+│   │   │           │   ├── RegionDAO.java
+│   │   │           │   └── UsuarioDAO.java
 │   │   │           ├── model/          # Modelos de datos
+│   │   │           │   ├── Caracterizacion.java
+│   │   │           │   ├── InstalacionPanelSolar.java
+│   │   │           │   ├── PanelSolar.java
+│   │   │           │   ├── Region.java
+│   │   │           │   └── Usuario.java
 │   │   │           ├── util/           # Utilidades
+│   │   │           │   └── DatabaseUtil.java
 │   │   │           └── Main.java       # Punto de entrada
 │   │   └── resources/                  # Recursos adicionales
 │   └── test/                           # Pruebas unitarias
@@ -97,33 +178,86 @@ PanelSolar/
 
 ## 🔧 Uso del Sistema
 
-### Gestión de Usuarios
+### Ejemplo Completo de Uso
 
 ```java
-// Crear un nuevo usuario
-Usuario nuevoUsuario = new Usuario();
-nuevoUsuario.setNombre("Juan");
-nuevoUsuario.setApellido("Pérez");
-nuevoUsuario.setEmail("juan.perez@ejemplo.com");
-nuevoUsuario.setPassword("contraseña123");
-nuevoUsuario.setTelefono("123456789");
-nuevoUsuario.setDireccion("Calle Principal 123");
-nuevoUsuario.setRegionId(1);
+// Crear y gestionar regiones
+RegionController regionController = new RegionController();
+regionController.crearRegion("Norte");
+regionController.crearRegion("Sur");
+List<Region> regiones = regionController.listarRegiones();
 
-UsuarioDAO usuarioDAO = new UsuarioDAO();
-usuarioDAO.addUsuario(nuevoUsuario);
+// Crear usuarios
+UsuarioController usuarioController = new UsuarioController();
+usuarioController.crearUsuario(
+    "Juan", "Pérez",
+    "juan@example.com",
+    "password123",
+    "555-123456",
+    "Calle Principal 123",
+    1 // regionId
+);
+
+// Buscar usuarios
+Usuario usuario = usuarioController.buscarUsuarioPorEmail("juan@example.com");
+
+// Gestionar instalaciones
+InstalacionPanelSolarController instalacionController = new InstalacionPanelSolarController();
+instalacionController.crearInstalacion(
+    usuario.getId(),      // usuarioId
+    1,                    // panelSolarId
+    1,                    // caracterizacionId
+    usuario.getRegionId(), // regionId
+    new Date(),           // fechaInstalacion
+    "Av. Principal 123",  // direcciónInstalación
+    10,                   // cantidadPaneles
+    "Pendiente",          // estado
+    "Instalación residencial" // observaciones
+);
 ```
 
-### Gestión de Regiones
+### Autenticación de Usuarios
 
 ```java
-// Añadir una nueva región
-Region nuevaRegion = new Region(0, "Región Norte");
-RegionDAO regionDAO = new RegionDAO();
-regionDAO.addRegion(nuevaRegion);
+UsuarioController usuarioController = new UsuarioController();
+boolean autenticado = usuarioController.autenticarUsuario("juan@example.com", "password123");
+if (autenticado) {
+    System.out.println("Usuario autenticado correctamente");
+} else {
+    System.out.println("Credenciales incorrectas");
+}
+```
 
-// Obtener todas las regiones
-List<Region> regiones = regionDAO.getAllRegions();
+### Consulta de Instalaciones por Región
+
+```java
+InstalacionPanelSolarController instalacionController = new InstalacionPanelSolarController();
+List<InstalacionPanelSolar> instalacionesPorRegion = instalacionController.listarInstalacionesPorRegion(1);
+```
+
+## 🔄 Diagrama del Sistema
+
+```
+┌───────────────┐       ┌───────────────┐       ┌───────────────┐
+│   Controllers │       │     Models    │       │     DAOs      │
+│   (Lógica de  │◄─────►│  (Entidades)  │◄─────►│  (Acceso a    │
+│    negocio)   │       │               │       │    datos)     │
+└───────┬───────┘       └───────────────┘       └───────┬───────┘
+        │                                                │
+        │                                                │
+        │                                                │
+        └────────────────────┬───────────────────────────┘
+                            │
+                     ┌──────▼───────┐
+                     │  DatabaseUtil│
+                     │ (Conexión BD)│
+                     └──────┬───────┘
+                            │
+                     ┌──────▼───────┐
+                     │  Base de     │
+                     │   Datos      │
+                     │  MySQL       │
+                     └──────────────┘
 ```
 
 ## 🤝 Contribución
